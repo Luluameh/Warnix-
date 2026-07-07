@@ -1,0 +1,278 @@
+// This is your Prisma schema file for Warnix.
+// All enums use String fields in the DB for flexibility — TypeScript enums are in types/index.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Core Incident ─────────────────────────────────────────────────────────
+
+model Incident {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // IncidentType
+  severity    Int
+  location    String
+  latitude    Float
+  longitude   Float
+  description String
+  status      String   @default("ACTIVE") // IncidentStatus
+  demoMode    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agentRuns   AgentRun[]
+  deployments Deployment[]
+  resources   IncidentResource[]
+  votes       AgentVote[]
+  messages    AgentMessage[]
+  timeline    TimelineEntry[]
+  contentions ResourceContention[] @relation("ContentionWinner")
+  citizenReportId String?          @unique
+  citizenReport   CitizenReport?   @relation(fields: [citizenReportId], references: [id])
+  attachments     IncidentAttachment[]
+  commanderActions CommanderAction[]
+}
+
+// ─── Agent Run ─────────────────────────────────────────────────────────────
+
+model AgentRun {
+  id                   String   @id @default(cuid())
+  incidentId           String
+  incident             Incident @relation(fields: [incidentId], references: [id])
+  status               String   @default("RUNNING") // RunStatus
+  currentRound         Int      @default(1)
+  startedAt            DateTime @default(now())
+  completedAt          DateTime?
+  finalDecision        Json?
+  sharedMemorySnapshot String?  // JSON string snapshot at run end
+  events               AgentEvent[]
+  votes                AgentVote[]
+  negotiations         NegotiationRound[]
+  messages             AgentMessage[]
+}
+
+// ─── Agent Events ──────────────────────────────────────────────────────────
+
+model AgentEvent {
+  id         String   @id @default(cuid())
+  agentRunId String
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id])
+  eventType  String
+  agentId    String   // AgentId | 'SYSTEM' | 'HUMAN'
+  payload    Json
+  round      Int      @default(1)
+  timestamp  DateTime @default(now())
+  parentId   String?
+  parent     AgentEvent?  @relation("EventReplies", fields: [parentId], references: [id])
+  replies    AgentEvent[] @relation("EventReplies")
+}
+
+// ─── Agent Messages (Debate Log) ───────────────────────────────────────────
+
+model AgentMessage {
+  id          String   @id @default(cuid())
+  agentRunId  String
+  agentRun    AgentRun @relation(fields: [agentRunId], references: [id])
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id])
+  fromAgent   String   // AgentId | 'SYSTEM' | 'HUMAN'
+  toAgent     String?  // AgentId | null (null = broadcast)
+  messageType String   // MessageType
+  content     String
+  reasoning   String?
+  evidenceTier Int?    // 1 | 2 | 3
+  round       Int      @default(1)
+  timestamp   DateTime @default(now())
+}
+
+// ─── Agent Votes ───────────────────────────────────────────────────────────
+
+model AgentVote {
+  id               String   @id @default(cuid())
+  agentRunId       String
+  agentRun         AgentRun @relation(fields: [agentRunId], references: [id])
+  incidentId       String
+  incident         Incident @relation(fields: [incidentId], references: [id])
+  agentId          String   // AgentId
+  round            Int      @default(1)
+  confidence       Float
+  urgency          Float
+  vote             String   @default("AGREE") // VoteType
+  recommendation   String
+  reasoning        String
+  risks            String[]
+  memoryUsed       Boolean  @default(false)
+  memoryInfluence  String?
+  rawOutput        Json?
+  detectedAt       DateTime @default(now())
+}
+
+// ─── Negotiation Rounds ────────────────────────────────────────────────────
+
+model NegotiationRound {
+  id         String   @id @default(cuid())
+  agentRunId String
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id])
+  question   String
+  askedBy    String   // always 'NEXUS'
+  askedTo    String   // AgentId
+  answer     String?
+  answeredAt DateTime?
+  askedAt    DateTime @default(now())
+}
+
+// ─── Historical Incidents (seed data, long-term memory) ───────────────────
+
+model HistoricalIncident {
+  id                   String   @id @default(cuid())
+  type                 String   // IncidentType
+  title                String
+  summary              String
+  location             String
+  year                 Int
+  severity             Int
+  lessonsLearned       String[]
+  successfulStrategies String[]
+  failures             String[]
+  resourcesUsed        Json
+  outcome              String
+  tags                 String[]
+}
+
+// ─── Resources ─────────────────────────────────────────────────────────────
+
+model Resource {
+  id          String            @id @default(cuid())
+  type        String            // ResourceType
+  name        String
+  callSign    String            @unique
+  status      String            @default("AVAILABLE") // ResourceStatus
+  latitude    Float
+  longitude   Float
+  homeBase    String
+  deployments IncidentResource[]
+}
+
+model IncidentResource {
+  id          String    @id @default(cuid())
+  incidentId  String
+  incident    Incident  @relation(fields: [incidentId], references: [id])
+  resourceId  String
+  resource    Resource  @relation(fields: [resourceId], references: [id])
+  status      String    @default("PENDING") // DeploymentStatus
+  route       Json?     // waypoints array
+  etaMinutes  Int?
+  deployedAt  DateTime  @default(now())
+  arrivedAt   DateTime?
+  completedAt DateTime?
+}
+
+// ─── Deployments ───────────────────────────────────────────────────────────
+
+model Deployment {
+  id             String   @id @default(cuid())
+  incidentId     String
+  incident       Incident @relation(fields: [incidentId], references: [id])
+  approvedBy     String   // "AI" | "HUMAN"
+  overridden     Boolean  @default(false)
+  overrideReason String?
+  plan           Json
+  timeline       Json[]
+  createdAt      DateTime @default(now())
+}
+
+// ─── Timeline Entries ──────────────────────────────────────────────────────
+
+model TimelineEntry {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  agentId    String   // AgentId | 'SYSTEM' | 'HUMAN'
+  category   String   // TimelineCategory
+  title      String
+  detail     String
+  severity   String   @default("INFO")
+  timestamp  DateTime @default(now())
+}
+
+// ─── Resource Contention ───────────────────────────────────────────────────
+
+model ResourceContention {
+  id           String   @id @default(cuid())
+  resourceType String   // ResourceType
+  incidentIds  String[]
+  winnerId     String
+  winner       Incident @relation("ContentionWinner", fields: [winnerId], references: [id])
+  loserId      String   // just stored as string, no relation needed
+  formula      String
+  mitigation   String
+  resolvedAt   DateTime @default(now())
+}
+
+// ─── Extended EOC Audit-Safe Models ───────────────────────────────────────
+
+model CitizenReport {
+  id                   String                 @id @default(cuid())
+  title                String
+  type                 String                 // IncidentType
+  description          String
+  severity             Int
+  location             String
+  latitude             Float?
+  longitude            Float?
+  contactName          String?
+  contactPhone         String?
+  anonymous            Boolean                @default(false)
+  status               String                 @default("NEW") // IncidentStatus lifecycle
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  incident             Incident?
+  attachments          IncidentAttachment[]
+  cancellationRequests CancellationRequest[]
+  commanderActions     CommanderAction[]
+}
+
+model IncidentAttachment {
+  id              String         @id @default(cuid())
+  citizenReportId String?
+  citizenReport   CitizenReport? @relation(fields: [citizenReportId], references: [id])
+  incidentId      String?
+  incident        Incident?      @relation(fields: [incidentId], references: [id])
+  url             String
+  createdAt       DateTime       @default(now())
+}
+
+model CancellationRequest {
+  id              String        @id @default(cuid())
+  citizenReportId String
+  citizenReport   CitizenReport @relation(fields: [citizenReportId], references: [id])
+  status          String        @default("PENDING") // PENDING | APPROVED | CONTINUED | FALSE_ALARM | DUPLICATE
+  reason          String?
+  createdAt       DateTime      @default(now())
+  resolvedAt      DateTime?
+}
+
+model CommanderAction {
+  id              String         @id @default(cuid())
+  incidentId      String?
+  incident        Incident?      @relation(fields: [incidentId], references: [id])
+  citizenReportId String?
+  citizenReport   CitizenReport? @relation(fields: [citizenReportId], references: [id])
+  actionType      String         // APPROVE | REJECT | OVERRIDE | RECALL | FALSE_ALARM | DUPLICATE | CANCEL | RESOLVE | ARCHIVE
+  details         String?
+  timestamp       DateTime       @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  category  String   // USER | COMMANDER | SYSTEM | AGENT
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+}
