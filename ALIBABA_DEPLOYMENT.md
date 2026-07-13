@@ -22,6 +22,10 @@ The Warnix backend communicates directly with the Alibaba Cloud Maas/DashScope i
 
 ## 3. Server Deployment Verification Screen
 
-*Replace this preview with a screenshot of your Alibaba Cloud Console Workbench showing the running Next.js / PM2 server processes.*
+The following screenshots verify the active deployment running live on the Alibaba Cloud ECS instance at `http://8.211.27.44:3000`:
 
-![Alibaba Cloud Workbench Screenshot](/assets/warnix_dashboard_mockup.png)
+### Live Landing Page on ECS Instance
+![Alibaba Cloud Live Landing Page](/assets/warnix_landing_alibaba.png)
+
+### Live EOC Dashboard on ECS Instance
+![Alibaba Cloud Live EOC Dashboard](/assets/warnix_dashboard_alibaba.png)
