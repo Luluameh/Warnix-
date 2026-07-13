@@ -427,6 +427,103 @@ html, body {
   animation: route-flow 1.2s linear infinite !important;
 }
 
+/* ─── EOC Layout & Responsive Grid Systems ─── */
+.eoc-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.eoc-grid-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 360px;
+  grid-template-rows: 1fr 220px;
+  overflow: hidden;
+  gap: 4px;
+  padding: 4px;
+  background-color: var(--bg-base);
+}
+
+.eoc-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.eoc-bottom-row {
+  grid-column: 1 / span 3;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.eoc-map-panel {
+  flex: 1.5;
+  border: 1px solid var(--border);
+  borderRadius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+  position: relative;
+  min-height: 140px;
+  background-color: var(--bg-base);
+}
+
+/* ─── Mobile Responsiveness Media Queries (Width < 1024px & < 768px) ─── */
+@media (max-width: 1024px) {
+  .eoc-layout {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+  }
+  
+  .eoc-grid-body {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+
+  .eoc-column {
+    overflow: visible !important;
+    height: auto !important;
+    gap: 8px !important;
+  }
+
+  .eoc-bottom-row {
+    grid-column: 1 !important;
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    overflow: visible !important;
+    gap: 8px !important;
+  }
+
+  .eoc-panel {
+    min-height: 250px !important;
+    height: auto !important;
+  }
+
+  .eoc-map-panel {
+    min-height: 300px !important;
+    height: 300px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar-telemetry {
+    display: none !important;
+  }
+}
+
+
 
 
 

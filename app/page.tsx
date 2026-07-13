@@ -223,7 +223,7 @@ export default function LandingPage() {
           }}
         >
           {/* Left Column: Headline and CTAs */}
-          <div className="animate-fade-in-up" style={{ flex: '1 1 500px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="animate-fade-in-up" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent)', display: 'inline-block', boxShadow: '0 0 8px var(--accent)' }} />
               <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--accent)', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
@@ -245,7 +245,7 @@ export default function LandingPage() {
               />
               <h1
                 style={{
-                  fontSize: '52px',
+                  fontSize: 'clamp(32px, 8vw, 52px)',
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
                   margin: 0,
@@ -258,7 +258,7 @@ export default function LandingPage() {
             </div>
             <p
               style={{
-                fontSize: '20px',
+                fontSize: 'clamp(14px, 4vw, 20px)',
                 color: 'var(--accent)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 500,
@@ -270,7 +270,7 @@ export default function LandingPage() {
             </p>
             <p
               style={{
-                fontSize: '15px',
+                fontSize: 'clamp(12px, 3.2vw, 15px)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.6,
                 margin: 0,
@@ -280,7 +280,7 @@ export default function LandingPage() {
               Instead of static spreadsheets, Warnix instantiates an active society of seven specialized AI agents that debate, verify observations, crosscheck historical memory records, and auto-dispatch ambulance networks in real-time.
             </p>
 
-            <div style={{ display: 'flex', gap: '16px', marginTop: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '16px', marginTop: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <Link
                 href="/dashboard"
                 style={{
@@ -342,8 +342,9 @@ export default function LandingPage() {
           <div
             className="animate-fade-in-up delay-200"
             style={{
-              flex: '1 1 500px',
-              maxWidth: '560px',
+              flex: '1 1 300px',
+              maxWidth: '100%',
+              width: '560px',
               border: '1px solid var(--border-active)',
               borderRadius: '4px',
               backgroundColor: 'var(--bg-panel)',

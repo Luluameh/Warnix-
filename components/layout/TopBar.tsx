@@ -153,7 +153,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* 2. Middle Section: Critical EOC Telemetry */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div className="topbar-telemetry" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {/* Active Incidents */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '3px', border: '1px solid var(--border)' }}>
           <span style={{ fontSize: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>ACTIVE:</span>

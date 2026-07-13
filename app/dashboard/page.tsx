@@ -781,7 +781,7 @@ export default function MissionControlPage() {
       <GridBody>
         <ErrorBoundary>
           {/* Left Column (Incident Queue + Resource card registry + System Health) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+          <div className="eoc-column">
             <IncidentQueue
               incidents={incidents}
               selectedId={selectedIncidentId}
@@ -795,7 +795,7 @@ export default function MissionControlPage() {
           </div>
 
           {/* Center Column (Agent Society debate chat + decision synthesis) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+          <div className="eoc-column">
             {/* Mock EOC visual panel / map display */}
             <div
               className="eoc-panel"
@@ -829,18 +829,7 @@ export default function MissionControlPage() {
               </div>
 
               {/* Interactive Leaflet Disaster Map Panel */}
-              <div
-                style={{
-                  flex: 1.5,
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
-                  margin: '8px 0',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  minHeight: '140px',
-                  backgroundColor: 'var(--bg-base)',
-                }}
-              >
+              <div className="eoc-map-panel">
                 <DisasterMap
                   incidents={incidents}
                   resources={resources}
@@ -874,7 +863,7 @@ export default function MissionControlPage() {
           </div>
 
           {/* Right Column (Agent Workspace profile + explainability metrics) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+          <div className="eoc-column">
             <div style={{ display: 'flex', flex: 1.2, gap: '4px', overflow: 'hidden' }}>
               <div style={{ flex: selectedAgentId ? 1 : 2.8, transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'flex', overflow: 'hidden' }}>
                 <AgentRoster
@@ -904,7 +893,7 @@ export default function MissionControlPage() {
           </div>
 
           {/* Bottom row (Shared Memory Facts pool + Tabbed Conflict/Health + Incident Timeline logs) */}
-          <div style={{ gridColumn: '1 / span 3', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', overflow: 'hidden' }}>
+          <div className="eoc-bottom-row">
             <SharedMemoryPanel facts={facts} routes={routes} shortages={shortages} />
             
             {/* Tabbed Conflict / Health Panel */}
