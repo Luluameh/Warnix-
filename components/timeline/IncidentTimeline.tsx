@@ -53,6 +53,7 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ timeline }) 
             return (
               <div
                 key={entry.id}
+                className="animate-slide-in"
                 style={{
                   display: 'flex',
                   gap: '12px',

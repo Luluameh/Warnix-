@@ -1,7 +1,7 @@
 // components/map/DisasterMap.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import type { IncidentRecord, ResourceRecord } from '@/types';
@@ -30,6 +30,27 @@ interface DisasterMapProps {
   }>;
 }
 
+// Interpolation helper along a set of waypoints given progress (0 to 1)
+const getInterpolatedPoint = (waypoints: Array<[number, number]>, progress: number): [number, number] => {
+  if (!waypoints || waypoints.length === 0) return [51.505, -0.09];
+  if (waypoints.length === 1) return waypoints[0];
+  if (progress <= 0) return waypoints[0];
+  if (progress >= 1) return waypoints[waypoints.length - 1];
+
+  const totalSegments = waypoints.length - 1;
+  const rawIndex = progress * totalSegments;
+  const segmentIndex = Math.floor(rawIndex);
+  const segmentProgress = rawIndex - segmentIndex;
+
+  const start = waypoints[segmentIndex];
+  const end = waypoints[segmentIndex + 1];
+
+  const lat = start[0] + (end[0] - start[0]) * segmentProgress;
+  const lng = start[1] + (end[1] - start[1]) * segmentProgress;
+
+  return [lat, lng];
+};
+
 export const DisasterMap: React.FC<DisasterMapProps> = ({
   incidents,
   resources,
@@ -44,6 +65,53 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
   const center: [number, number] = selectedIncident
     ? [selectedIncident.latitude, selectedIncident.longitude]
     : [51.505, -0.09]; // Default London center
+
+  // Track progress and positions for active resource movements
+  const [animatedPositions, setAnimatedPositions] = useState<Record<string, [number, number]>>({});
+  const progressMapRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimatedPositions(prev => {
+        const next: Record<string, [number, number]> = { ...prev };
+        const progressMap = progressMapRef.current;
+
+        resources.forEach((res, index) => {
+          // If the resource is not deployed or no routes exist, clean up position override
+          if (routes.length === 0 || !['DEPLOYED', 'EN_ROUTE', 'RETURNING'].includes(res.status)) {
+            progressMap.set(res.id, 0);
+            delete next[res.id];
+            return;
+          }
+
+          // Distribute resources along available routes
+          const route = routes[index % routes.length];
+          const waypoints = route.waypoints;
+          if (!waypoints || waypoints.length === 0) return;
+
+          // Increment/decrement progress along route waypoints
+          let currentProgress = progressMap.get(res.id) ?? 0;
+          if (res.status === 'RETURNING') {
+            currentProgress = Math.max(currentProgress - 0.02, 0);
+          } else {
+            currentProgress = Math.min(currentProgress + 0.02, 1);
+          }
+          progressMap.set(res.id, currentProgress);
+
+          // If the progress is fully home or target and status is available/on-scene, clean up animation override
+          if (currentProgress === 0 && res.status === 'AVAILABLE') {
+            delete next[res.id];
+          } else {
+            next[res.id] = getInterpolatedPoint(waypoints, currentProgress);
+          }
+        });
+
+        return next;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [resources, routes]);
 
   // Custom HTML DivIcon for Incident Pins
   const createIncidentIcon = (severity: number, isSelected: boolean) => {
@@ -74,16 +142,30 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
     });
   };
 
-  // Custom HTML DivIcon for Responder Assets
+  // Custom HTML DivIcon for Responder Assets with health and status highlights
   const createResourceIcon = (type: string, status: string) => {
-    const color = status === 'AVAILABLE' ? 'var(--accent)' : 'var(--status-warn)';
+    let color = 'var(--text-secondary)';
+    let pulseClass = '';
+
+    if (status === 'AVAILABLE') {
+      color = 'var(--status-live)';
+    } else if (['PREPARING', 'DEPLOYING', 'EN_ROUTE'].includes(status)) {
+      color = 'var(--status-warn)';
+      pulseClass = 'status-indicator-glow-yellow';
+    } else if (status === 'ON_SCENE') {
+      color = 'var(--accent)';
+      pulseClass = 'status-indicator-glow-cyan';
+    } else if (status === 'RETURNING') {
+      color = 'var(--text-primary)';
+    }
+
     const text = type === 'AMBULANCE' ? 'AMB' :
                  type === 'FIRE_TRUCK' ? 'FIR' :
                  type === 'RESCUE_TEAM' ? 'SAR' :
                  type === 'HELICOPTER' ? 'COP' : 'VOL';
 
     return L.divIcon({
-      html: `<div style="
+      html: `<div class="${pulseClass}" style="
         background-color: var(--bg-panel-alt);
         border: 1px solid ${color};
         color: ${color};
@@ -94,6 +176,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
         border-radius: 3px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         white-space: nowrap;
+        transition: all 0.2s ease;
       ">
         ${text}
       </div>`,
@@ -104,11 +187,14 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
   };
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+      {/* HUD Radar sweep overlay */}
+      <div className="radar-sweep-overlay" />
+
       <MapContainer
         center={center}
         zoom={13}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', zIndex: 1 }}
         zoomControl={true}
       >
         {/* Dark Matter Carto basemap tiles */}
@@ -136,7 +222,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
                 </Popup>
               </Marker>
               
-              {/* Danger Zone Radius Circle */}
+              {/* Danger Zone Radius Circle with Pulse animation */}
               <Circle
                 center={[inc.latitude, inc.longitude]}
                 radius={800} // 800m default danger zone radius
@@ -146,33 +232,37 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
                   fillOpacity: 0.08,
                   weight: 1,
                   dashArray: '4,4',
+                  className: 'pulsing-danger-zone',
                 }}
               />
             </React.Fragment>
           );
         })}
 
-        {/* ─── Resource Markers ─── */}
+        {/* ─── Resource Markers (Dynamic coordinates if animating) ─── */}
         {resources
           .filter(r => r.latitude !== null && r.longitude !== null)
-          .map(res => (
-            <Marker
-              key={res.id}
-              position={[res.latitude!, res.longitude!]}
-              icon={createResourceIcon(res.type, res.status)}
-            >
-              <Popup>
-                <div style={{ padding: '2px' }}>
-                  <strong>{res.name}</strong>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                    Callsign: {res.callSign} | Status: {res.status}
+          .map(res => {
+            const currentPosition: [number, number] = animatedPositions[res.id] ?? [res.latitude!, res.longitude!];
+            return (
+              <Marker
+                key={res.id}
+                position={currentPosition}
+                icon={createResourceIcon(res.type, res.status)}
+              >
+                <Popup>
+                  <div style={{ padding: '2px' }}>
+                    <strong>{res.name}</strong>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                      Callsign: {res.callSign} | Status: {res.status}
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            );
+          })}
 
-        {/* ─── Route Polylines ─── */}
+        {/* ─── Route Polylines (Flowing path animation) ─── */}
         {routes.map(route => {
           const isBlocked = route.status === 'BLOCKED';
           return (
@@ -184,6 +274,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
                 weight: 3,
                 opacity: 0.8,
                 dashArray: isBlocked ? '6,6' : undefined,
+                className: isBlocked ? undefined : 'animated-route-line',
               }}
             >
               <Popup>

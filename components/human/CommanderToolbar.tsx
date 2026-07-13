@@ -8,6 +8,7 @@ interface CommanderToolbarProps {
   incidentStatus: string | null;
   checkpointMessage: string | null;
   hasCancellationRequest: boolean;
+  cancellationReason?: string | null;
   onApprove: () => void;
   onReject: () => void;
   onOverride: (instruction: string) => void;
@@ -25,6 +26,7 @@ export const CommanderToolbar: React.FC<CommanderToolbarProps> = ({
   incidentStatus,
   checkpointMessage,
   hasCancellationRequest,
+  cancellationReason = null,
   onApprove,
   onReject,
   onOverride,
@@ -114,9 +116,24 @@ export const CommanderToolbar: React.FC<CommanderToolbarProps> = ({
             <div className="font-mono" style={{ fontSize: '9px', fontWeight: 700, color: 'var(--status-warn)' }}>
               PENDING ACTION: CITIZEN REQUESTED CANCELLATION
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-primary)', marginTop: '2px' }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-primary)', marginTop: '2px', margin: 0 }}>
               Confirm withdrawal of this operation or reject request to continue.
             </p>
+            {cancellationReason && (
+              <div 
+                style={{ 
+                  marginTop: '6px', 
+                  padding: '6px 8px', 
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)', 
+                  borderLeft: '2px solid var(--status-warn)',
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Reason: &quot;{cancellationReason}&quot;
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button

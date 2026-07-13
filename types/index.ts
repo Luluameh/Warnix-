@@ -124,7 +124,11 @@ export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
 export const ResourceStatus = {
   AVAILABLE:   'AVAILABLE',
   DEPLOYED:    'DEPLOYED',
+  PREPARING:   'PREPARING',
+  DEPLOYING:   'DEPLOYING',
   EN_ROUTE:    'EN_ROUTE',
+  ON_SCENE:    'ON_SCENE',
+  RETURNING:   'RETURNING',
   UNAVAILABLE: 'UNAVAILABLE',
 } as const;
 export type ResourceStatus = typeof ResourceStatus[keyof typeof ResourceStatus];

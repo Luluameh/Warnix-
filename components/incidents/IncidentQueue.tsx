@@ -42,25 +42,145 @@ export const IncidentQueue: React.FC<IncidentQueueProps> = ({
     }
   };
 
+  const [withdrawModal, setWithdrawModal] = React.useState<{ id: string; status: string } | null>(null);
+  const [withdrawReason, setWithdrawReason] = React.useState('');
+
   const handleWithdrawClick = (e: React.MouseEvent, id: string, status: string) => {
     e.stopPropagation();
-    const reason = prompt('Please state the reason for withdrawal / cancellation:');
-    if (reason === null) return; // user cancelled prompt
-    
+    setWithdrawReason('');
+    setWithdrawModal({ id, status });
+  };
+
+  const handleWithdrawConfirm = () => {
+    if (!withdrawModal) return;
+    const { id, status } = withdrawModal;
+    const reason = withdrawReason.trim() || (status === 'NEW' ? 'Citizen withdrew request' : 'Citizen requested cancellation');
     if (status === 'NEW') {
-      if (onWithdrawReport) onWithdrawReport(id, reason || 'Citizen withdrew request');
+      if (onWithdrawReport) onWithdrawReport(id, reason);
     } else {
-      if (onRequestCancellation) onRequestCancellation(id, reason || 'Citizen requested cancellation');
+      if (onRequestCancellation) onRequestCancellation(id, reason);
     }
+    setWithdrawModal(null);
+    setWithdrawReason('');
   };
 
   return (
-    <div className="eoc-panel" style={{ flex: 1 }}>
+    <div className="eoc-panel" style={{ flex: 1, position: 'relative' }}>
+
+      {/* Withdraw / Cancel Reason Modal */}
+      {withdrawModal && (
+        <div
+          onClick={() => setWithdrawModal(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(5, 6, 8, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            backdropFilter: 'blur(3px)',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--bg-panel)',
+              border: '1px solid var(--border-active)',
+              borderRadius: '4px',
+              padding: '20px',
+              width: '90%',
+              maxWidth: '320px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--status-crit)', letterSpacing: '0.1em' }}>
+              {withdrawModal.status === 'NEW' ? '⚠ WITHDRAW REPORT' : '⚠ REQUEST CANCELLATION'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              {withdrawModal.status === 'NEW'
+                ? 'This will immediately withdraw the report. Please state the reason.'
+                : 'A cancellation request will be submitted to the Commander for review.'}
+            </div>
+            <textarea
+              autoFocus
+              value={withdrawReason}
+              onChange={e => setWithdrawReason(e.target.value)}
+              placeholder="Reason (optional)..."
+              rows={3}
+              style={{
+                backgroundColor: 'var(--bg-input, #0a0f1a)',
+                border: '1px solid var(--border)',
+                borderRadius: '3px',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                padding: '8px',
+                resize: 'none',
+                outline: 'none',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setWithdrawModal(null)}
+                style={{
+                  padding: '4px 12px', fontSize: '10px', fontFamily: 'var(--font-mono)',
+                  background: 'none', border: '1px solid var(--border)',
+                  borderRadius: '3px', color: 'var(--text-secondary)', cursor: 'pointer',
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleWithdrawConfirm}
+                style={{
+                  padding: '4px 12px', fontSize: '10px', fontFamily: 'var(--font-mono)',
+                  background: 'rgba(252,129,129,0.12)', border: '1px solid var(--status-crit)',
+                  borderRadius: '3px', color: 'var(--status-crit)', cursor: 'pointer', fontWeight: 700,
+                }}
+              >
+                CONFIRM
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="eoc-panel-header">
-        <span>Incident Registry</span>
-        <span className="font-mono text-cyan" style={{ fontSize: '9px' }}>
-          {incidents.length} logged
-        </span>
+        <span>Incident Registry ({incidents.length})</span>
+        <button
+          onClick={onNewIncidentClick}
+          className="btn-interactive"
+          style={{
+            backgroundColor: 'var(--bg-panel-alt)',
+            border: '1px solid var(--accent-dim)',
+            color: 'var(--accent)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '9px',
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.boxShadow = '0 0 6px rgba(0, 212, 255, 0.2)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = 'var(--accent-dim)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          [+] REPORT EMERGENCY
+        </button>
       </div>
 
       <div className="eoc-panel-content" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px' }}>
@@ -157,37 +277,6 @@ export const IncidentQueue: React.FC<IncidentQueueProps> = ({
           })
         )}
 
-        <button
-          onClick={onNewIncidentClick}
-          style={{
-            marginTop: '8px',
-            height: '28px',
-            backgroundColor: 'var(--bg-panel-alt)',
-            border: '1px solid var(--border)',
-            borderRadius: '4px',
-            color: 'var(--accent)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-            e.currentTarget.style.borderColor = 'var(--accent-dim)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-panel-alt)';
-            e.currentTarget.style.borderColor = 'var(--border)';
-          }}
-        >
-          [+] REPORT EMERGENCY
-        </button>
       </div>
     </div>
   );

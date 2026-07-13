@@ -298,5 +298,136 @@ html, body {
   transform: translateY(0) scale(1);
 }
 
+/* ─── EOC Glow and Pulse Keyframes ────────────────────────────────── */
+
+@keyframes pulse-glow-cyan {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 4px var(--accent); }
+  50% { opacity: 1; box-shadow: 0 0 12px var(--accent); }
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 4px var(--status-live); }
+  50% { opacity: 1; box-shadow: 0 0 12px var(--status-live); }
+}
+
+@keyframes pulse-glow-yellow {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 4px var(--status-warn); }
+  50% { opacity: 1; box-shadow: 0 0 12px var(--status-warn); }
+}
+
+.status-indicator-glow-cyan {
+  background-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse-glow-cyan 2s infinite ease-in-out;
+}
+
+.status-indicator-glow-green {
+  background-color: var(--status-live);
+  box-shadow: 0 0 8px var(--status-live);
+  animation: pulse-glow-green 2s infinite ease-in-out;
+}
+
+.status-indicator-glow-yellow {
+  background-color: var(--status-warn);
+  box-shadow: 0 0 8px var(--status-warn);
+  animation: pulse-glow-yellow 2s infinite ease-in-out;
+}
+
+.status-indicator-glow-red {
+  background-color: var(--status-crit);
+  box-shadow: 0 0 8px var(--status-crit);
+  animation: pulse-glow-crit 1s infinite ease-in-out;
+}
+
+/* ─── Skeleton Loading Shimmer ────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-hover) 50%, var(--bg-panel) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* ─── Card Hover Transitions ──────────────────────────────────────── */
+
+.hover-lift-cyan {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift-cyan:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 212, 255, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.15);
+}
+
+.btn-interactive {
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-interactive:active {
+  transform: scale(0.96);
+}
+
+/* Smooth fade-in animation for list telemetry updates */
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Leaflet GIS Tactical HUD & Animations ─────────────────────── */
+
+@keyframes radar-sweep {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.radar-sweep-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: conic-gradient(from 0deg at 50% 50%, rgba(0, 212, 255, 0.05) 0deg, rgba(0, 212, 255, 0) 90deg);
+  animation: radar-sweep 12s linear infinite;
+  z-index: 999;
+}
+
+@keyframes danger-pulse {
+  0%, 100% { fill-opacity: 0.05; stroke-opacity: 0.5; }
+  50% { fill-opacity: 0.12; stroke-opacity: 0.9; }
+}
+
+.pulsing-danger-zone {
+  animation: danger-pulse 2.5s infinite ease-in-out !important;
+}
+
+@keyframes route-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animated-route-line {
+  stroke-dasharray: 6, 6;
+  animation: route-flow 1.2s linear infinite !important;
+}
+
+
+
 
 
