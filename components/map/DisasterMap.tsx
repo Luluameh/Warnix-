@@ -204,44 +204,46 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
         />
 
         {/* ─── Incident Markers ─── */}
-        {incidents.map(inc => {
-          const isSelected = inc.id === selectedIncidentId;
-          return (
-            <React.Fragment key={inc.id}>
-              <Marker
-                position={[inc.latitude, inc.longitude]}
-                icon={createIncidentIcon(inc.severity, isSelected)}
-              >
-                <Popup>
-                  <div style={{ backgroundColor: 'var(--bg-panel)', color: 'var(--text-primary)', padding: '4px' }}>
-                    <strong style={{ fontSize: '12px' }}>{inc.title}</strong>
-                    <div style={{ fontSize: '10px', marginTop: '2px', color: 'var(--text-secondary)' }}>
-                      Severity: {inc.severity} | Location: {inc.location}
+        {incidents
+          .filter(inc => typeof inc.latitude === 'number' && typeof inc.longitude === 'number' && !isNaN(inc.latitude) && !isNaN(inc.longitude))
+          .map(inc => {
+            const isSelected = inc.id === selectedIncidentId;
+            return (
+              <React.Fragment key={inc.id}>
+                <Marker
+                  position={[inc.latitude, inc.longitude]}
+                  icon={createIncidentIcon(inc.severity, isSelected)}
+                >
+                  <Popup>
+                    <div style={{ backgroundColor: 'var(--bg-panel)', color: 'var(--text-primary)', padding: '4px' }}>
+                      <strong style={{ fontSize: '12px' }}>{inc.title}</strong>
+                      <div style={{ fontSize: '10px', marginTop: '2px', color: 'var(--text-secondary)' }}>
+                        Severity: {inc.severity} | Location: {inc.location}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-              
-              {/* Danger Zone Radius Circle with Pulse animation */}
-              <Circle
-                center={[inc.latitude, inc.longitude]}
-                radius={800} // 800m default danger zone radius
-                pathOptions={{
-                  color: inc.severity >= 8 ? 'var(--status-crit)' : 'var(--status-warn)',
-                  fillColor: inc.severity >= 8 ? 'var(--status-crit)' : 'var(--status-warn)',
-                  fillOpacity: 0.08,
-                  weight: 1,
-                  dashArray: '4,4',
-                  className: 'pulsing-danger-zone',
-                }}
-              />
-            </React.Fragment>
-          );
-        })}
+                  </Popup>
+                </Marker>
+                
+                {/* Danger Zone Radius Circle with Pulse animation */}
+                <Circle
+                  center={[inc.latitude, inc.longitude]}
+                  radius={800} // 800m default danger zone radius
+                  pathOptions={{
+                    color: inc.severity >= 8 ? 'var(--status-crit)' : 'var(--status-warn)',
+                    fillColor: inc.severity >= 8 ? 'var(--status-crit)' : 'var(--status-warn)',
+                    fillOpacity: 0.08,
+                    weight: 1,
+                    dashArray: '4,4',
+                    className: 'pulsing-danger-zone',
+                  }}
+                />
+              </React.Fragment>
+            );
+          })}
 
         {/* ─── Resource Markers (Dynamic coordinates if animating) ─── */}
         {resources
-          .filter(r => r.latitude !== null && r.longitude !== null)
+          .filter(r => typeof r.latitude === 'number' && typeof r.longitude === 'number' && !isNaN(r.latitude) && !isNaN(r.longitude))
           .map(res => {
             const currentPosition: [number, number] = animatedPositions[res.id] ?? [res.latitude!, res.longitude!];
             return (
@@ -263,31 +265,33 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
           })}
 
         {/* ─── Route Polylines (Flowing path animation) ─── */}
-        {routes.map(route => {
-          const isBlocked = route.status === 'BLOCKED';
-          return (
-            <Polyline
-              key={route.id}
-              positions={route.waypoints}
-              pathOptions={{
-                color: isBlocked ? 'var(--status-crit)' : 'var(--accent)',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: isBlocked ? '6,6' : undefined,
-                className: isBlocked ? undefined : 'animated-route-line',
-              }}
-            >
-              <Popup>
-                <div>
-                  <strong>{route.name}</strong>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                    Status: {route.status} {route.blockedReason ? `(${route.blockedReason})` : ''}
+        {routes
+          .filter(r => Array.isArray(r.waypoints) && r.waypoints.length > 0)
+          .map(route => {
+            const isBlocked = route.status === 'BLOCKED';
+            return (
+              <Polyline
+                key={route.id}
+                positions={route.waypoints}
+                pathOptions={{
+                  color: isBlocked ? 'var(--status-crit)' : 'var(--accent)',
+                  weight: 3,
+                  opacity: 0.8,
+                  dashArray: isBlocked ? '6,6' : undefined,
+                  className: isBlocked ? undefined : 'animated-route-line',
+                }}
+              >
+                <Popup>
+                  <div>
+                    <strong>{route.name}</strong>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                      Status: {route.status} {route.blockedReason ? `(${route.blockedReason})` : ''}
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Polyline>
-          );
-        })}
+                </Popup>
+              </Polyline>
+            );
+          })}
       </MapContainer>
     </div>
   );

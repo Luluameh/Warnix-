@@ -70,6 +70,9 @@ export async function callQwen(
   }
 
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
   try {
     response = await fetch(`${QWEN_BASE_URL}/chat/completions`, {
       method: 'POST',
@@ -78,13 +81,23 @@ export async function callQwen(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
     });
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new QwenError(
+        `Qwen API request timed out after 15 seconds. Please check your internet connection.`,
+        undefined,
+        options.agentId,
+      );
+    }
     throw new QwenError(
       `Network error calling Qwen API: ${err instanceof Error ? err.message : String(err)}`,
       undefined,
       options.agentId,
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
